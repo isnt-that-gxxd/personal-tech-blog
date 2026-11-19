@@ -1,0 +1,175 @@
+---
+interface Props {
+	title: string;
+	description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="ko">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="description" content={description} />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+	</head>
+	<body>
+		<a class="skip-link" href="#main-content">본문으로 건너뛰기</a>
+		<header class="site-header">
+			<div class="header-inner">
+				<a class="brand" href="/" aria-label="개발 노트 홈">
+					<span class="brand-mark" aria-hidden="true">n</span>
+					<span>개발 노트</span>
+				</a>
+				<nav class="top-nav" aria-label="주요 메뉴">
+					<a class="current" href="/preview" aria-current="page">문서</a>
+					<a href="/">소개</a>
+				</nav>
+				<a class="home-link" href="/">블로그 홈 <span aria-hidden="true">↗</span></a>
+			</div>
+		</header>
+		<slot />
+	</body>
+</html>
+
+<style>
+	:global(*) {
+		box-sizing: border-box;
+	}
+
+	:global(html) {
+		scroll-behavior: smooth;
+		scroll-padding-top: 6rem;
+	}
+
+	:global(body) {
+		margin: 0;
+		min-width: 320px;
+		background: #fff;
+		color: #20242b;
+		font-family:
+			Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR',
+			sans-serif;
+		-webkit-font-smoothing: antialiased;
+	}
+
+	.skip-link {
+		position: fixed;
+		z-index: 20;
+		top: 0.75rem;
+		left: 0.75rem;
+		padding: 0.65rem 0.9rem;
+		transform: translateY(-160%);
+		border-radius: 0.4rem;
+		background: #20242b;
+		color: #fff;
+		font-size: 0.875rem;
+		text-decoration: none;
+	}
+
+	.skip-link:focus {
+		transform: translateY(0);
+	}
+
+	.site-header {
+		position: sticky;
+		z-index: 10;
+		top: 0;
+		height: 64px;
+		border-bottom: 1px solid #e8eaed;
+		background: rgb(255 255 255 / 94%);
+		backdrop-filter: blur(12px);
+	}
+
+	.header-inner {
+		display: flex;
+		width: min(100% - 64px, 1480px);
+		height: 100%;
+		align-items: center;
+		margin: 0 auto;
+	}
+
+	.brand {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.65rem;
+		color: #20242b;
+		font-size: 0.95rem;
+		font-weight: 650;
+		letter-spacing: -0.02em;
+		text-decoration: none;
+	}
+
+	.brand-mark {
+		display: grid;
+		width: 27px;
+		height: 27px;
+		place-items: center;
+		border: 1px solid #dfe3e8;
+		border-radius: 8px;
+		color: #3c4653;
+		font-family: Georgia, serif;
+		font-size: 1.15rem;
+		font-style: italic;
+	}
+
+	.top-nav {
+		display: flex;
+		height: 100%;
+		align-items: center;
+		gap: 1.7rem;
+		margin-left: 3rem;
+	}
+
+	.top-nav a,
+	.home-link {
+		color: #69717c;
+		font-size: 0.84rem;
+		text-decoration: none;
+	}
+
+	.top-nav a:hover,
+	.home-link:hover {
+		color: #20242b;
+	}
+
+	.top-nav .current {
+		height: 100%;
+		align-content: center;
+		border-bottom: 2px solid #333b46;
+		color: #20242b;
+		font-weight: 600;
+	}
+
+	.home-link {
+		margin-left: auto;
+	}
+
+	.home-link span {
+		margin-left: 0.25rem;
+		font-size: 0.8rem;
+	}
+
+	@media (max-width: 640px) {
+		.site-header {
+			height: 58px;
+		}
+
+		.header-inner {
+			width: calc(100% - 36px);
+		}
+
+		.top-nav {
+			gap: 1rem;
+			margin-left: 1.4rem;
+		}
+
+		.top-nav a,
+		.home-link {
+			font-size: 0.78rem;
+		}
+	}
+</style>
