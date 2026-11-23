@@ -1,0 +1,35 @@
+---
+import { render } from 'astro:content';
+import DocumentationArticle from '../../components/DocumentationArticle.astro';
+import { formatPostDate, getPublishedPosts, getPostsWithNeighbors } from '../../lib/posts';
+
+export async function getStaticPaths() {
+	const posts = await getPublishedPosts();
+	const postsWithNeighbors = getPostsWithNeighbors(posts);
+
+	return postsWithNeighbors.map(({ post, previous, next }) => ({
+		params: { slug: post.id },
+		props: { post, previous, next },
+	}));
+}
+
+const { post, previous, next } = Astro.props;
+const { Content, headings } = await render(post);
+const dateIso = post.data.date.toISOString().slice(0, 10);
+const dateLabel = formatPostDate(post.data.date);
+---
+
+<DocumentationArticle
+	title={post.data.title}
+	description={post.data.description}
+	category={post.data.category}
+	dateIso={dateIso}
+	dateLabel={dateLabel}
+	headings={headings}
+	previous={
+		previous ? { href: `/posts/${previous.id}`, title: previous.data.title } : undefined
+	}
+	next={next ? { href: `/posts/${next.id}`, title: next.data.title } : undefined}
+>
+	<Content />
+</DocumentationArticle>

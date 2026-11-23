@@ -25,7 +25,11 @@ const { title, description } = Astro.props;
 					<span>개발 노트</span>
 				</a>
 				<nav class="top-nav" aria-label="주요 메뉴">
-					<a class="current" href="/preview" aria-current="page">문서</a>
+					<a
+						class:current={Astro.url.pathname === '/preview'}
+						href="/preview"
+						aria-current={Astro.url.pathname === '/preview' ? 'page' : undefined}
+					>문서</a>
 					<a href="/">소개</a>
 				</nav>
 				<a class="home-link" href="/">블로그 홈 <span aria-hidden="true">↗</span></a>
