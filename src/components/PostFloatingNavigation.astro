@@ -1,6 +1,8 @@
 ---
+import { withBase } from '../lib/urls';
+
 interface PostLink {
-	href: string;
+	href: `/${string}`;
 	title: string;
 }
 
@@ -15,7 +17,7 @@ const { previous, next } = Astro.props;
 <nav class="post-floating-nav" aria-label="게시글 이동">
 	{
 		previous ? (
-			<a href={previous.href} title={`이전 글: ${previous.title}`}>
+			<a href={withBase(previous.href)} title={`이전 글: ${previous.title}`}>
 				<span aria-hidden="true">← </span>이전 글
 			</a>
 		) : (
@@ -24,12 +26,12 @@ const { previous, next } = Astro.props;
 			</span>
 		)
 	}
-	<a class="list-link" href="/posts" aria-label="게시글 목록">
+	<a class="list-link" href={withBase('/posts')} aria-label="게시글 목록">
 		<span aria-hidden="true">▦ </span>목록
 	</a>
 	{
 		next ? (
-			<a href={next.href} title={`다음 글: ${next.title}`}>
+			<a href={withBase(next.href)} title={`다음 글: ${next.title}`}>
 				다음 글<span aria-hidden="true"> →</span>
 			</a>
 		) : (

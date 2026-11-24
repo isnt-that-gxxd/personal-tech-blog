@@ -1,5 +1,6 @@
 ---
 import { formatPostDate, type PostEntry } from '../lib/posts';
+import { withBase } from '../lib/urls';
 
 interface Props {
 	posts: readonly PostEntry[];
@@ -16,7 +17,7 @@ const { posts, emptyMessage = '아직 게시된 글이 없습니다.' } = Astro.
 				const date = post.data.date.toISOString().slice(0, 10);
 				return (
 					<article>
-						<a class="post-card" href={`/posts/${post.id}`}>
+						<a class="post-card" href={withBase(`/posts/${post.id}`)}>
 							<div class="post-meta">
 								<span>{post.data.category}</span>
 								<span aria-hidden="true">·</span>

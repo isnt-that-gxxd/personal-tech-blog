@@ -3,6 +3,7 @@ import { Code } from 'astro:components';
 import PostFloatingNavigation from './PostFloatingNavigation.astro';
 import DocumentationLayout from '../layouts/DocumentationLayout.astro';
 import { categoryNames, categorySlugs, type CategoryName } from '../lib/categories';
+import { withBase } from '../lib/urls';
 
 interface Heading {
 	depth: number;
@@ -156,12 +157,12 @@ const retryExample = `async function withRetry<T>(
 
 		<main id="main-content" class="article-column">
 			<nav class="breadcrumbs" aria-label="현재 위치">
-				<a href="/">통 속의 뇌</a>
+				<a href={withBase('/')}>통 속의 뇌</a>
 				<span aria-hidden="true">/</span>
 				<a
 					href={
 						isPost && category
-							? `/category/${categorySlugs[category]}`
+							? withBase(`/category/${categorySlugs[category]}`)
 							: '#overview'
 					}
 				>

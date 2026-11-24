@@ -1,6 +1,7 @@
 ---
 import Footer from '../components/Footer.astro';
 import { categoryNames, categorySlugs, type CategoryName } from '../lib/categories';
+import { withBase } from '../lib/urls';
 
 interface Props {
 	title: string;
@@ -9,8 +10,14 @@ interface Props {
 }
 
 const { title, description, activeCategory } = Astro.props;
-const isHome = Astro.url.pathname === '/';
-const hasFloatingNavigation = /^\/posts\/[^/]+\/?$/.test(Astro.url.pathname);
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+const pathname =
+	basePath &&
+	(Astro.url.pathname === basePath || Astro.url.pathname.startsWith(`${basePath}/`))
+		? Astro.url.pathname.slice(basePath.length) || '/'
+		: Astro.url.pathname;
+const isHome = pathname === '/';
+const hasFloatingNavigation = /^\/posts\/[^/]+\/?$/.test(pathname);
 ---
 
 <!doctype html>
@@ -28,14 +35,14 @@ const hasFloatingNavigation = /^\/posts\/[^/]+\/?$/.test(Astro.url.pathname);
 		<a class="skip-link" href="#main-content">본문으로 건너뛰기</a>
 		<header class="site-header">
 			<div class="header-inner">
-				<a class="brand" href="/" aria-label="통 속의 뇌 홈">
+				<a class="brand" href={withBase('/')} aria-label="통 속의 뇌 홈">
 					<span class="brand-mark" aria-hidden="true">n</span>
 					<span>통 속의 뇌</span>
 				</a>
 				<nav class="top-nav" aria-label="주요 메뉴">
 					<a
 						class:current={isHome}
-						href="/"
+						href={withBase('/')}
 						aria-current={isHome ? 'page' : undefined}
 					>Home</a>
 					{
@@ -44,7 +51,7 @@ const hasFloatingNavigation = /^\/posts\/[^/]+\/?$/.test(Astro.url.pathname);
 							return (
 								<a
 									class:current={isCurrent}
-									href={`/category/${categorySlugs[category]}`}
+									href={withBase(`/category/${categorySlugs[category]}`)}
 									aria-current={isCurrent ? 'page' : undefined}
 								>
 									{category}
