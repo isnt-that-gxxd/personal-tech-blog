@@ -8,8 +8,26 @@ export interface PostWithNeighbors {
 	next: PostEntry | undefined;
 }
 
+const featuredPostIds = ['ai-basics', 'resilient-async-work'] as const;
+
 export async function getPublishedPosts(): Promise<PostEntry[]> {
 	return getCollection('posts', ({ data }) => !data.draft);
+}
+
+export function getFeaturedPosts(posts: readonly PostEntry[]): PostEntry[] {
+	const publishedPostsById = new Map(
+		posts.filter((post) => !post.data.draft).map((post) => [post.id, post] as const),
+	);
+	const selectedIds = new Set<string>();
+
+	return featuredPostIds
+		.flatMap((id) => {
+			if (selectedIds.has(id)) return [];
+			selectedIds.add(id);
+			const post = publishedPostsById.get(id);
+			return post ? [post] : [];
+		})
+		.slice(0, 3);
 }
 
 export function sortPostsByDate(

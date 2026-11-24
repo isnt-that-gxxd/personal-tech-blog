@@ -1,0 +1,45 @@
+---
+interface Props {
+	hasFloatingNavigation?: boolean;
+}
+
+const { hasFloatingNavigation = false } = Astro.props;
+const currentYear = new Date().getFullYear();
+---
+
+<footer class:list={['site-footer', { 'has-floating-navigation': hasFloatingNavigation }]}>
+	<div class="footer-inner">
+		<p>© {currentYear} 통 속의 뇌. All rights reserved.</p>
+	</div>
+</footer>
+
+<style>
+	.site-footer {
+		flex: 0 0 auto;
+		border-top: 1px solid var(--color-border);
+		background: #fff;
+	}
+
+	.footer-inner {
+		width: var(--home-content-width);
+		margin: 0 auto;
+		padding: 1.15rem 0;
+		color: var(--color-secondary-text);
+		font-size: 0.76rem;
+		line-height: 1.5;
+	}
+
+	.footer-inner p {
+		margin: 0;
+	}
+
+	.site-footer.has-floating-navigation {
+		margin-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+	}
+
+	@media (max-width: 640px) {
+		.footer-inner {
+			padding: 1rem 0;
+		}
+	}
+</style>

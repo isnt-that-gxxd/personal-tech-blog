@@ -1,10 +1,16 @@
 ---
+import Footer from '../components/Footer.astro';
+import { categoryNames, categorySlugs, type CategoryName } from '../lib/categories';
+
 interface Props {
 	title: string;
 	description: string;
+	activeCategory?: CategoryName;
 }
 
-const { title, description } = Astro.props;
+const { title, description, activeCategory } = Astro.props;
+const isHome = Astro.url.pathname === '/';
+const hasFloatingNavigation = /^\/posts\/[^/]+\/?$/.test(Astro.url.pathname);
 ---
 
 <!doctype html>
@@ -13,6 +19,8 @@ const { title, description } = Astro.props;
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="description" content={description} />
+		<meta name="application-name" content="통 속의 뇌" />
+		<meta property="og:site_name" content="통 속의 뇌" />
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
 	</head>
@@ -20,26 +28,52 @@ const { title, description } = Astro.props;
 		<a class="skip-link" href="#main-content">본문으로 건너뛰기</a>
 		<header class="site-header">
 			<div class="header-inner">
-				<a class="brand" href="/" aria-label="개발 노트 홈">
+				<a class="brand" href="/" aria-label="통 속의 뇌 홈">
 					<span class="brand-mark" aria-hidden="true">n</span>
-					<span>개발 노트</span>
+					<span>통 속의 뇌</span>
 				</a>
 				<nav class="top-nav" aria-label="주요 메뉴">
 					<a
-						class:current={Astro.url.pathname === '/preview'}
-						href="/preview"
-						aria-current={Astro.url.pathname === '/preview' ? 'page' : undefined}
-					>문서</a>
-					<a href="/">소개</a>
+						class:current={isHome}
+						href="/"
+						aria-current={isHome ? 'page' : undefined}
+					>Home</a>
+					{
+						categoryNames.map((category) => {
+							const isCurrent = activeCategory === category;
+							return (
+								<a
+									class:current={isCurrent}
+									href={`/category/${categorySlugs[category]}`}
+									aria-current={isCurrent ? 'page' : undefined}
+								>
+									{category}
+								</a>
+							);
+						})
+					}
 				</nav>
-				<a class="home-link" href="/">블로그 홈 <span aria-hidden="true">↗</span></a>
 			</div>
 		</header>
-		<slot />
+		<div class="site-content">
+			<slot />
+		</div>
+		<Footer hasFloatingNavigation={hasFloatingNavigation} />
 	</body>
 </html>
 
 <style>
+	:global(:root) {
+		--home-content-width: min(calc(100% - 48px), 920px);
+		--color-accent: #8737ff;
+		--color-accent-hover: #6427c7;
+		--color-primary-text: #25232a;
+		--color-secondary-text: #706d76;
+		--color-border: #e9e8ec;
+		--color-surface: #f8f8fa;
+		--color-subtle-surface: #f3f2f5;
+	}
+
 	:global(*) {
 		box-sizing: border-box;
 	}
@@ -50,14 +84,22 @@ const { title, description } = Astro.props;
 	}
 
 	:global(body) {
+		display: flex;
+		min-height: 100vh;
+		min-height: 100dvh;
+		flex-direction: column;
 		margin: 0;
 		min-width: 320px;
 		background: #fff;
-		color: #20242b;
+		color: var(--color-primary-text);
 		font-family:
 			Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR',
 			sans-serif;
 		-webkit-font-smoothing: antialiased;
+	}
+
+	.site-content {
+		flex: 1 0 auto;
 	}
 
 	.skip-link {
@@ -68,7 +110,7 @@ const { title, description } = Astro.props;
 		padding: 0.65rem 0.9rem;
 		transform: translateY(-160%);
 		border-radius: 0.4rem;
-		background: #20242b;
+		background: var(--color-primary-text);
 		color: #fff;
 		font-size: 0.875rem;
 		text-decoration: none;
@@ -83,7 +125,7 @@ const { title, description } = Astro.props;
 		z-index: 10;
 		top: 0;
 		height: 64px;
-		border-bottom: 1px solid #e8eaed;
+		border-bottom: 1px solid var(--color-border);
 		background: rgb(255 255 255 / 94%);
 		backdrop-filter: blur(12px);
 	}
@@ -100,7 +142,7 @@ const { title, description } = Astro.props;
 		display: inline-flex;
 		align-items: center;
 		gap: 0.65rem;
-		color: #20242b;
+		color: var(--color-primary-text);
 		font-size: 0.95rem;
 		font-weight: 650;
 		letter-spacing: -0.02em;
@@ -112,9 +154,9 @@ const { title, description } = Astro.props;
 		width: 27px;
 		height: 27px;
 		place-items: center;
-		border: 1px solid #dfe3e8;
+		border: 1px solid var(--color-border);
 		border-radius: 8px;
-		color: #3c4653;
+		color: var(--color-secondary-text);
 		font-family: Georgia, serif;
 		font-size: 1.15rem;
 		font-style: italic;
@@ -129,32 +171,33 @@ const { title, description } = Astro.props;
 	}
 
 	.top-nav a,
-	.home-link {
-		color: #69717c;
+	.top-nav a:visited {
+		display: inline-flex;
+		height: 100%;
+		align-items: center;
+		color: var(--color-secondary-text);
 		font-size: 0.84rem;
 		text-decoration: none;
 	}
 
-	.top-nav a:hover,
-	.home-link:hover {
-		color: #20242b;
+	.top-nav a:hover {
+		color: var(--color-accent-hover);
 	}
 
 	.top-nav .current {
-		height: 100%;
-		align-content: center;
-		border-bottom: 2px solid #333b46;
-		color: #20242b;
+		border-bottom: 2px solid var(--color-accent);
+		color: var(--color-primary-text);
 		font-weight: 600;
 	}
 
-	.home-link {
-		margin-left: auto;
+	.top-nav .current:visited {
+		color: var(--color-primary-text);
 	}
 
-	.home-link span {
-		margin-left: 0.25rem;
-		font-size: 0.8rem;
+	.top-nav a:focus-visible {
+		border-radius: 0.25rem;
+		outline: 2px solid var(--color-accent);
+		outline-offset: -3px;
 	}
 
 	@media (max-width: 640px) {
@@ -164,16 +207,32 @@ const { title, description } = Astro.props;
 
 		.header-inner {
 			width: calc(100% - 36px);
+			gap: 0.75rem;
+		}
+
+		.brand {
+			flex: none;
 		}
 
 		.top-nav {
-			gap: 1rem;
-			margin-left: 1.4rem;
+			min-width: 0;
+			flex: 1 1 0;
+			gap: 0.25rem;
+			margin-left: 0;
+			overflow-x: auto;
+			overscroll-behavior-x: contain;
 		}
 
-		.top-nav a,
-		.home-link {
+		.top-nav a {
+			flex: none;
+			padding: 0 0.45rem;
 			font-size: 0.78rem;
+		}
+	}
+
+	@media (max-width: 600px) {
+		:global(:root) {
+			--home-content-width: calc(100% - 36px);
 		}
 	}
 </style>

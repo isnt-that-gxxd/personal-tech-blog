@@ -2,6 +2,7 @@
 import { Code } from 'astro:components';
 import PostFloatingNavigation from './PostFloatingNavigation.astro';
 import DocumentationLayout from '../layouts/DocumentationLayout.astro';
+import { categoryNames, categorySlugs, type CategoryName } from '../lib/categories';
 
 interface Heading {
 	depth: number;
@@ -17,7 +18,7 @@ interface PostLink {
 interface Props {
 	title?: string;
 	description?: string;
-	category?: string;
+	category?: CategoryName;
 	dateLabel?: string;
 	dateIso?: string;
 	headings?: Heading[];
@@ -112,12 +113,13 @@ const retryExample = `async function withRetry<T>(
 ---
 
 <DocumentationLayout
-	title={isPost ? `${title} | 개발 노트` : '안전한 비동기 작업 설계 | 개발 노트'}
+	title={isPost ? `${title} | 통 속의 뇌` : '안전한 비동기 작업 설계 | 통 속의 뇌'}
 	description={
 		isPost
 			? description ?? ''
 			: '실패를 예측하고 복구할 수 있는 비동기 API 설계 방법을 살펴봅니다.'
 	}
+	activeCategory={isPost ? category : undefined}
 >
 	<div class:list={['reading-layout', { 'has-post-navigation': isPost }]}>
 		<aside class="topic-sidebar" aria-label="문서 주제 탐색">
@@ -127,10 +129,14 @@ const retryExample = `async function withRetry<T>(
 					isPost ? (
 						<nav class="topic-links" aria-label="카테고리">
 							<p class="nav-caption">카테고리</p>
-							<span class:list={{ selected: category === 'Learn AI' }} aria-current={category === 'Learn AI' ? 'true' : undefined}>Learn AI</span>
-							<span class:list={{ selected: category === 'Vibe Coding' }} aria-current={category === 'Vibe Coding' ? 'true' : undefined}>Vibe Coding</span>
-							<span class:list={{ selected: category === 'Projects' }} aria-current={category === 'Projects' ? 'true' : undefined}>Projects</span>
-							<span class:list={{ selected: category === 'Product Design' }} aria-current={category === 'Product Design' ? 'true' : undefined}>Product Design</span>
+						{categoryNames.map((name) => (
+							<span
+								class:list={{ selected: category === name }}
+								aria-current={category === name ? 'true' : undefined}
+							>
+								{name}
+							</span>
+						))}
 						</nav>
 					) : (
 						<nav class="topic-links" aria-label="문서 주제">
@@ -150,9 +156,15 @@ const retryExample = `async function withRetry<T>(
 
 		<main id="main-content" class="article-column">
 			<nav class="breadcrumbs" aria-label="현재 위치">
-				<a href="/">개발 노트</a>
+				<a href="/">통 속의 뇌</a>
 				<span aria-hidden="true">/</span>
-				<a href={isPost ? '#article-category' : '#overview'}>
+				<a
+					href={
+						isPost && category
+							? `/category/${categorySlugs[category]}`
+							: '#overview'
+					}
+				>
 					{isPost ? category : '웹 개발'}
 				</a>
 				<span aria-hidden="true">/</span>
@@ -538,7 +550,7 @@ const retryExample = `async function withRetry<T>(
 	.nav-caption,
 	.toc-title {
 		margin: 0 0 0.8rem;
-		color: #858c96;
+		color: var(--color-secondary-text);
 		font-size: 0.72rem;
 		font-weight: 650;
 		letter-spacing: 0.075em;
@@ -552,32 +564,36 @@ const retryExample = `async function withRetry<T>(
 	.topic-links a {
 		padding: 0.55rem 0.7rem;
 		border-radius: 0.4rem;
-		color: #59616c;
+		color: var(--color-secondary-text);
 		line-height: 1.4;
 		text-decoration: none;
+	}
+
+	.topic-links a:visited {
+		color: var(--color-secondary-text);
 	}
 
 	.topic-links > span {
 		padding: 0.55rem 0.7rem;
 		border-radius: 0.4rem;
-		color: #59616c;
+		color: var(--color-secondary-text);
 		line-height: 1.4;
 	}
 
 	.topic-links a:hover {
-		background: #f5f6f7;
-		color: #20242b;
+		background: var(--color-surface);
+		color: var(--color-accent-hover);
 	}
 
 	.topic-links a.selected {
-		background: #f0f2f4;
-		color: #252b33;
+		background: var(--color-subtle-surface);
+		color: var(--color-primary-text);
 		font-weight: 600;
 	}
 
 	.topic-links > span.selected {
-		background: #f0f2f4;
-		color: #252b33;
+		background: var(--color-subtle-surface);
+		color: var(--color-primary-text);
 		font-weight: 600;
 	}
 
@@ -592,24 +608,46 @@ const retryExample = `async function withRetry<T>(
 		align-items: center;
 		gap: 0.55rem;
 		margin: 0 0 2rem;
-		color: #8a9099;
+		color: var(--color-secondary-text);
 		font-size: 0.77rem;
 	}
 
-	.breadcrumbs a {
-		color: #69717c;
+	.breadcrumbs a,
+	.breadcrumbs a:visited {
+		color: var(--color-secondary-text);
 		text-decoration: none;
 	}
 
 	.breadcrumbs a:hover {
-		color: #20242b;
+		color: var(--color-accent-hover);
 		text-decoration: underline;
 		text-underline-offset: 3px;
 	}
 
+	.article-body a,
+	.article-body a:visited,
+	.toc-menu a,
+	.toc-menu a:visited {
+		color: var(--color-secondary-text);
+	}
+
+	.article-body a:hover,
+	.toc-menu a:hover {
+		color: var(--color-accent-hover);
+	}
+
+	.topic-links a:focus-visible,
+	.breadcrumbs a:focus-visible,
+	.article-body a:focus-visible,
+	.toc-menu a:focus-visible {
+		border-radius: 0.2rem;
+		outline: 2px solid var(--color-accent);
+		outline-offset: 2px;
+	}
+
 	.article-header {
 		padding-bottom: 2rem;
-		border-bottom: 1px solid #e9ebee;
+		border-bottom: 1px solid var(--color-border);
 	}
 
 	.post-header {
@@ -619,19 +657,19 @@ const retryExample = `async function withRetry<T>(
 
 	.eyebrow {
 		margin: 0 0 0.8rem;
-		color: #68717d;
+		color: var(--color-secondary-text);
 		font-size: 0.82rem;
 		font-weight: 600;
 	}
 
 	.eyebrow span {
 		margin: 0 0.22rem;
-		color: #a4a9b0;
+		color: var(--color-secondary-text);
 	}
 
 	h1 {
 		margin: 0;
-		color: #1d2229;
+		color: var(--color-primary-text);
 		font-size: clamp(2rem, 3.4vw, 2.55rem);
 		font-weight: 650;
 		letter-spacing: -0.055em;
@@ -640,7 +678,7 @@ const retryExample = `async function withRetry<T>(
 
 	.dek {
 		margin: 1.1rem 0 1.4rem;
-		color: #606975;
+		color: var(--color-secondary-text);
 		font-size: 1.05rem;
 		line-height: 1.75;
 	}
@@ -650,7 +688,7 @@ const retryExample = `async function withRetry<T>(
 		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.55rem;
-		color: #757d88;
+		color: var(--color-secondary-text);
 		font-size: 0.78rem;
 	}
 
@@ -659,20 +697,20 @@ const retryExample = `async function withRetry<T>(
 		width: 25px;
 		height: 25px;
 		place-items: center;
-		border: 1px solid #e5e7ea;
+		border: 1px solid var(--color-border);
 		border-radius: 50%;
-		background: #f7f8f9;
-		color: #48515c;
+		background: var(--color-surface);
+		color: var(--color-secondary-text);
 		font-size: 0.7rem;
 	}
 
 	.meta-dot {
-		color: #b6bbc2;
+		color: var(--color-secondary-text);
 	}
 
 	.article-body {
 		padding-top: 0.3rem;
-		color: #363d46;
+		color: var(--color-primary-text);
 		font-size: 1.04rem;
 		line-height: 1.78;
 		overflow-wrap: break-word;
@@ -684,7 +722,7 @@ const retryExample = `async function withRetry<T>(
 
 	.article-body h2 {
 		margin: 0 0 1rem;
-		color: #20252c;
+		color: var(--color-primary-text);
 		font-size: 1.55rem;
 		font-weight: 620;
 		letter-spacing: -0.04em;
@@ -698,7 +736,7 @@ const retryExample = `async function withRetry<T>(
 
 	.article-body h3 {
 		margin: 2rem 0 0.65rem;
-		color: #282e36;
+		color: var(--color-primary-text);
 		font-size: 1.17rem;
 		font-weight: 620;
 		letter-spacing: -0.025em;
@@ -711,16 +749,16 @@ const retryExample = `async function withRetry<T>(
 	}
 
 	.article-body strong {
-		color: #252b33;
+		color: var(--color-primary-text);
 		font-weight: 650;
 	}
 
 	.article-body code:not(pre code) {
 		padding: 0.12em 0.36em;
-		border: 1px solid #e8eaed;
+		border: 1px solid var(--color-border);
 		border-radius: 0.3rem;
-		background: #f6f7f8;
-		color: #39414b;
+		background: var(--color-subtle-surface);
+		color: var(--color-primary-text);
 		font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
 		font-size: 0.83em;
 		white-space: nowrap;
@@ -738,14 +776,14 @@ const retryExample = `async function withRetry<T>(
 	}
 
 	.article-body li::marker {
-		color: #818a96;
+		color: var(--color-secondary-text);
 	}
 
 	blockquote {
 		margin: 1.7rem 0;
 		padding: 0.2rem 0 0.2rem 1.15rem;
-		border-left: 2px solid #cbd1d8;
-		color: #606975;
+		border-left: 2px solid var(--color-border);
+		color: var(--color-secondary-text);
 	}
 
 	blockquote p {
@@ -755,9 +793,9 @@ const retryExample = `async function withRetry<T>(
 	.code-card {
 		margin: 1.5rem 0 1.8rem;
 		overflow: hidden;
-		border: 1px solid #e5e8ec;
+		border: 1px solid var(--color-border);
 		border-radius: 0.65rem;
-		background: #fbfbfc;
+		background: var(--color-surface);
 	}
 
 	.code-toolbar {
@@ -766,12 +804,12 @@ const retryExample = `async function withRetry<T>(
 		align-items: center;
 		justify-content: space-between;
 		padding: 0 0.85rem 0 1rem;
-		border-bottom: 1px solid #e9ebee;
-		background: #f8f9fa;
+		border-bottom: 1px solid var(--color-border);
+		background: var(--color-subtle-surface);
 	}
 
 	.language-label {
-		color: #68717c;
+		color: var(--color-secondary-text);
 		font-size: 0.74rem;
 		font-weight: 550;
 	}
@@ -785,7 +823,7 @@ const retryExample = `async function withRetry<T>(
 		border: 1px solid transparent;
 		border-radius: 0.35rem;
 		background: transparent;
-		color: #626b76;
+		color: var(--color-secondary-text);
 		cursor: pointer;
 		font: inherit;
 		font-size: 0.73rem;
@@ -793,15 +831,15 @@ const retryExample = `async function withRetry<T>(
 
 	.copy-button:hover,
 	.copy-button:focus-visible {
-		border-color: #e1e4e8;
-		background: #fff;
-		color: #242a32;
+		border-color: var(--color-border);
+		background: var(--color-surface);
+		color: var(--color-accent-hover);
 	}
 
 	.copy-button:focus-visible,
 	.feedback-actions button:focus-visible,
 	.topic-menu summary:focus-visible {
-		outline: 2px solid #667d98;
+		outline: 2px solid var(--color-accent);
 		outline-offset: 2px;
 	}
 
@@ -823,7 +861,7 @@ const retryExample = `async function withRetry<T>(
 		min-width: max-content;
 		margin: 0;
 		padding: 1rem 1.1rem 1.2rem;
-		background: #fbfbfc !important;
+		background: var(--color-surface) !important;
 		font-size: 0.8rem;
 		line-height: 1.72;
 		tab-size: 2;
@@ -852,7 +890,7 @@ const retryExample = `async function withRetry<T>(
 	.table-wrap {
 		margin: 1.45rem 0 1.8rem;
 		overflow-x: auto;
-		border: 1px solid #e7e9ec;
+		border: 1px solid var(--color-border);
 		border-radius: 0.55rem;
 	}
 
@@ -866,8 +904,8 @@ const retryExample = `async function withRetry<T>(
 
 	caption {
 		padding: 0.75rem 0.9rem;
-		border-bottom: 1px solid #e7e9ec;
-		color: #69717c;
+		border-bottom: 1px solid var(--color-border);
+		color: var(--color-secondary-text);
 		font-size: 0.78rem;
 		text-align: left;
 	}
@@ -876,19 +914,19 @@ const retryExample = `async function withRetry<T>(
 	td {
 		min-width: 110px;
 		padding: 0.72rem 0.85rem;
-		border-bottom: 1px solid #eceef0;
+		border-bottom: 1px solid var(--color-border);
 		vertical-align: top;
 	}
 
 	th {
-		background: #f8f9fa;
-		color: #3d4651;
+		background: var(--color-subtle-surface);
+		color: var(--color-primary-text);
 		font-size: 0.76rem;
 		font-weight: 620;
 	}
 
 	td {
-		color: #59616c;
+		color: var(--color-secondary-text);
 	}
 
 	tbody tr:last-child td {
@@ -913,7 +951,7 @@ const retryExample = `async function withRetry<T>(
 		left: 0;
 		width: 0.75rem;
 		height: 0.75rem;
-		border: 1px solid #b9c1ca;
+		border: 1px solid var(--color-border);
 		border-radius: 50%;
 		content: '';
 	}
@@ -921,14 +959,14 @@ const retryExample = `async function withRetry<T>(
 	.article-footer {
 		margin-top: 3.5rem;
 		padding: 1.5rem 0;
-		border-top: 1px solid #e9ebee;
-		border-bottom: 1px solid #e9ebee;
+		border-top: 1px solid var(--color-border);
+		border-bottom: 1px solid var(--color-border);
 		text-align: center;
 	}
 
 	.article-footer > p {
 		margin: 0 0 0.85rem;
-		color: #535c67;
+		color: var(--color-secondary-text);
 		font-size: 0.9rem;
 		font-weight: 550;
 	}
@@ -942,18 +980,18 @@ const retryExample = `async function withRetry<T>(
 
 	.feedback-actions button {
 		padding: 0.52rem 0.8rem;
-		border: 1px solid #e2e5e8;
+		border: 1px solid var(--color-border);
 		border-radius: 0.4rem;
-		background: #fff;
-		color: #5e6671;
+		background: var(--color-surface);
+		color: var(--color-secondary-text);
 		cursor: pointer;
 		font: inherit;
 		font-size: 0.77rem;
 	}
 
 	.feedback-actions button:hover {
-		background: #f8f9fa;
-		color: #252b33;
+		background: var(--color-subtle-surface);
+		color: var(--color-accent-hover);
 	}
 
 	.toc-sidebar {
@@ -967,7 +1005,7 @@ const retryExample = `async function withRetry<T>(
 		flex-direction: column;
 		gap: 0.15rem;
 		padding-left: 0.9rem;
-		border-left: 1px solid #e6e8eb;
+		border-left: 1px solid var(--color-border);
 		font-size: 0.76rem;
 	}
 
@@ -975,25 +1013,26 @@ const retryExample = `async function withRetry<T>(
 		margin-bottom: 0.55rem;
 	}
 
-	.toc-menu a {
+	.toc-menu a,
+	.toc-menu a:visited {
 		padding: 0.36rem 0;
-		color: #737b86;
+		color: var(--color-secondary-text);
 		line-height: 1.45;
 		text-decoration: none;
 	}
 
 	.toc-menu a:hover {
-		color: #252b33;
+		color: var(--color-accent-hover);
 	}
 
 	.toc-menu a.toc-subitem {
 		padding-left: 0.65rem;
-		color: #9298a1;
+		color: var(--color-secondary-text);
 		font-size: 0.72rem;
 	}
 
 	.toc-menu a.toc-subitem:hover {
-		color: #4a535e;
+		color: var(--color-accent-hover);
 	}
 
 	@media (max-width: 1180px) {
@@ -1023,8 +1062,8 @@ const retryExample = `async function withRetry<T>(
 
 		.topic-menu {
 			position: static;
-			border-top: 1px solid #e9ebee;
-			border-bottom: 1px solid #e9ebee;
+			border-top: 1px solid var(--color-border);
+			border-bottom: 1px solid var(--color-border);
 		}
 
 		.topic-menu summary {
@@ -1032,7 +1071,7 @@ const retryExample = `async function withRetry<T>(
 			min-height: 48px;
 			align-items: center;
 			justify-content: space-between;
-			color: #535c67;
+			color: var(--color-secondary-text);
 			cursor: pointer;
 			font-size: 0.86rem;
 			font-weight: 550;
@@ -1044,7 +1083,7 @@ const retryExample = `async function withRetry<T>(
 		}
 
 		.topic-menu summary span {
-			color: #858c96;
+			color: var(--color-secondary-text);
 			transition: transform 160ms ease;
 		}
 
@@ -1070,7 +1109,7 @@ const retryExample = `async function withRetry<T>(
 			grid-template-columns: repeat(2, minmax(0, 1fr));
 			gap: 0 0.8rem;
 			padding: 1rem 0 0;
-			border-top: 1px solid #e9ebee;
+			border-top: 1px solid var(--color-border);
 			border-left: 0;
 		}
 

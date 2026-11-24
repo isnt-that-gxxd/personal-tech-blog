@@ -1,0 +1,108 @@
+---
+import { formatPostDate, type PostEntry } from '../lib/posts';
+
+interface Props {
+	posts: readonly PostEntry[];
+	emptyMessage?: string;
+}
+
+const { posts, emptyMessage = '아직 게시된 글이 없습니다.' } = Astro.props;
+---
+
+<section class="post-list" aria-label="게시글 목록">
+	{
+		posts.length > 0 ? (
+			posts.map((post) => {
+				const date = post.data.date.toISOString().slice(0, 10);
+				return (
+					<article>
+						<a class="post-card" href={`/posts/${post.id}`}>
+							<div class="post-meta">
+								<span>{post.data.category}</span>
+								<span aria-hidden="true">·</span>
+								<time datetime={date}>{formatPostDate(post.data.date)}</time>
+							</div>
+							<h2>{post.data.title}</h2>
+							<p>{post.data.description}</p>
+						</a>
+					</article>
+				);
+			})
+		) : (
+			<p class="empty-state">{emptyMessage}</p>
+		)
+	}
+</section>
+
+<style>
+	.post-list article {
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.post-card {
+		display: block;
+		padding: 1.55rem 0 1.7rem;
+		color: var(--color-primary-text);
+		text-decoration: none;
+	}
+
+	.post-card:visited {
+		color: var(--color-primary-text);
+	}
+
+	.post-card:hover h2 {
+		color: var(--color-accent-hover);
+	}
+
+	.post-card:focus-visible {
+		border-radius: 0.35rem;
+		outline: 2px solid var(--color-accent);
+		outline-offset: 4px;
+	}
+
+	.post-meta {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem;
+		color: var(--color-secondary-text);
+		font-size: 0.78rem;
+	}
+
+	.post-meta span:first-child {
+		color: var(--color-secondary-text);
+		font-weight: 600;
+	}
+
+	h2 {
+		margin: 0.55rem 0 0.4rem;
+		color: var(--color-primary-text);
+		font-size: 1.3rem;
+		font-weight: 620;
+		letter-spacing: -0.035em;
+		line-height: 1.45;
+		transition: color 140ms ease;
+	}
+
+	.post-card p {
+		margin: 0;
+		color: var(--color-secondary-text);
+		font-size: 0.94rem;
+		line-height: 1.7;
+	}
+
+	.empty-state {
+		padding: 2rem 0;
+		color: var(--color-secondary-text);
+	}
+
+	@media (max-width: 520px) {
+		.post-card {
+			padding: 1.3rem 0 1.45rem;
+		}
+
+		h2 {
+			font-size: 1.18rem;
+		}
+	}
+</style>

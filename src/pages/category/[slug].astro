@@ -1,0 +1,84 @@
+---
+import DocumentationLayout from '../../layouts/DocumentationLayout.astro';
+import PostList from '../../components/PostList.astro';
+import { categoryNames, categorySlugs } from '../../lib/categories';
+import { getPublishedPosts, sortPostsByDate } from '../../lib/posts';
+
+export async function getStaticPaths() {
+	const publishedPosts = await getPublishedPosts();
+
+	return categoryNames.map((category) => ({
+		params: { slug: categorySlugs[category] },
+		props: {
+			category,
+			posts: sortPostsByDate(
+				publishedPosts.filter((post) => post.data.category === category),
+			),
+		},
+	}));
+}
+
+const { category, posts } = Astro.props;
+const description = `${category} 카테고리의 공개 게시글 ${posts.length}개를 확인하세요.`;
+---
+
+<DocumentationLayout
+	title={`${category} 게시글 | 통 속의 뇌`}
+	description={description}
+	activeCategory={category}
+>
+	<main id="main-content" class="category-page">
+		<header class="category-header">
+			<p class="eyebrow">카테고리</p>
+			<h1>{category}</h1>
+			<p class="category-description">{posts.length}개 게시글</p>
+		</header>
+		<PostList
+			posts={posts}
+			emptyMessage={`${category} 카테고리에 게시된 글이 없습니다.`}
+		/>
+	</main>
+</DocumentationLayout>
+
+<style>
+	.category-page {
+		width: min(100% - 48px, 820px);
+		margin: 0 auto;
+		padding: 58px 0 100px;
+	}
+
+	.category-header {
+		padding-bottom: 2rem;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.eyebrow {
+		margin: 0 0 0.75rem;
+		color: var(--color-secondary-text);
+		font-size: 0.82rem;
+		font-weight: 600;
+	}
+
+	h1 {
+		margin: 0;
+		color: var(--color-primary-text);
+		font-size: clamp(2rem, 5vw, 2.5rem);
+		font-weight: 650;
+		letter-spacing: -0.055em;
+		line-height: 1.25;
+	}
+
+	.category-description {
+		margin: 0.9rem 0 0;
+		color: var(--color-secondary-text);
+		font-size: 1rem;
+		line-height: 1.7;
+	}
+
+	@media (max-width: 520px) {
+		.category-page {
+			width: calc(100% - 36px);
+			padding-top: 40px;
+		}
+	}
+</style>

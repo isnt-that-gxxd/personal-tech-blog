@@ -52,15 +52,16 @@ const { previous, next } = Astro.props;
 		align-items: stretch;
 		padding: 5px;
 		transform: translateX(-50%);
-		border: 1px solid #e4e7eb;
+		border: 1px solid var(--color-border);
 		border-radius: 999px;
-		background: rgb(255 255 255 / 92%);
-		box-shadow: 0 8px 26px rgb(25 32 42 / 12%);
+		background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+		box-shadow: 0 8px 26px color-mix(in srgb, var(--color-primary-text) 12%, transparent);
 		backdrop-filter: blur(16px);
 		-webkit-backdrop-filter: blur(16px);
 	}
 
 	.post-floating-nav a,
+	.post-floating-nav a:visited,
 	.post-floating-nav .disabled {
 		display: inline-flex;
 		min-width: 48px;
@@ -68,7 +69,7 @@ const { previous, next } = Astro.props;
 		align-items: center;
 		justify-content: center;
 		padding: 0.65rem 1rem;
-		color: #4a535f;
+		color: var(--color-secondary-text);
 		font-size: 0.82rem;
 		font-weight: 550;
 		line-height: 1.2;
@@ -80,22 +81,24 @@ const { previous, next } = Astro.props;
 	.post-floating-nav a + .disabled,
 	.post-floating-nav .disabled + a,
 	.post-floating-nav .disabled + .disabled {
-		border-left: 1px solid #e7e9ed;
+		border-left: 1px solid var(--color-border);
 	}
 
-	.post-floating-nav a:hover {
-		color: #20242b;
+	.post-floating-nav a:hover,
+	.post-floating-nav a:visited:hover {
+		color: var(--color-accent-hover);
 	}
 
 	.post-floating-nav a:focus-visible {
 		z-index: 1;
 		border-radius: 999px;
-		outline: 2px solid #667d98;
+		outline: 2px solid var(--color-accent);
 		outline-offset: 1px;
 	}
 
 	.post-floating-nav .disabled {
-		color: #a4aab2;
+		color: var(--color-secondary-text);
+		opacity: 0.55;
 	}
 
 	@media (max-width: 480px) {
