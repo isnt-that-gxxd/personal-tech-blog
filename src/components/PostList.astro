@@ -1,5 +1,6 @@
 ---
 import { formatPostDate, type PostEntry } from '../lib/posts';
+import { normalizeTagKey } from '../lib/tags';
 import { withBase } from '../lib/urls';
 
 interface Props {
@@ -13,22 +14,27 @@ const { posts, emptyMessage = '아직 게시된 글이 없습니다.' } = Astro.
 <section class="post-list" aria-label="게시글 목록">
 	{
 		posts.length > 0 ? (
-			posts.map((post) => {
-				const date = post.data.date.toISOString().slice(0, 10);
-				return (
-					<article>
-						<a class="post-card" href={withBase(`/posts/${post.id}`)}>
-							<div class="post-meta">
-								<span>{post.data.category}</span>
-								<span aria-hidden="true">·</span>
-								<time datetime={date}>{formatPostDate(post.data.date)}</time>
-							</div>
-							<h2>{post.data.title}</h2>
-							<p>{post.data.description}</p>
-						</a>
-					</article>
-				);
-			})
+			<>
+				{posts.map((post) => {
+					const date = post.data.date.toISOString().slice(0, 10);
+					return (
+						<article data-post-tags={JSON.stringify(post.data.tags.map(normalizeTagKey))}>
+							<a class="post-card" href={withBase(`/posts/${post.id}`)}>
+								<div class="post-meta">
+									<span>{post.data.category}</span>
+									<span aria-hidden="true">·</span>
+									<time datetime={date}>{formatPostDate(post.data.date)}</time>
+								</div>
+								<h2>{post.data.title}</h2>
+								<p>{post.data.description}</p>
+							</a>
+						</article>
+					);
+				})}
+				<p class="empty-state" data-filter-empty hidden>
+					선택한 태그가 포함된 게시글이 없습니다.
+				</p>
+			</>
 		) : (
 			<p class="empty-state">{emptyMessage}</p>
 		)

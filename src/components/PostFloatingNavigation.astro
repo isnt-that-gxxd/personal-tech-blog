@@ -17,26 +17,56 @@ const { previous, next } = Astro.props;
 <nav class="post-floating-nav" aria-label="게시글 이동">
 	{
 		previous ? (
-			<a href={withBase(previous.href)} title={`이전 글: ${previous.title}`}>
-				<span aria-hidden="true">← </span>이전 글
+			<a
+				class="nav-action"
+				href={withBase(previous.href)}
+				aria-label={`이전 글: ${previous.title}`}
+				title={`이전 글: ${previous.title}`}
+			>
+				<svg aria-hidden="true" viewBox="0 0 24 24">
+					<path d="m15 18-6-6 6-6" />
+				</svg>
+				<span class="nav-label" aria-hidden="true">이전 글</span>
 			</a>
 		) : (
-			<span class="disabled" aria-disabled="true">
-				<span aria-hidden="true">← </span>이전 글
+			<span class="nav-action disabled" aria-disabled="true">
+				<svg aria-hidden="true" viewBox="0 0 24 24">
+					<path d="m15 18-6-6 6-6" />
+				</svg>
+				<span class="nav-label" aria-hidden="true">이전 글</span>
+				<span class="sr-only">이전 글이 없습니다.</span>
 			</span>
 		)
 	}
-	<a class="list-link" href={withBase('/posts')} aria-label="게시글 목록">
-		<span aria-hidden="true">▦ </span>목록
+	<span class="separator" aria-hidden="true"></span>
+	<a class="nav-action" href={withBase('/posts')} aria-label="게시글 목록">
+		<svg aria-hidden="true" viewBox="0 0 24 24">
+			<path d="M9 6h11M9 12h11M9 18h11" />
+			<path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01" />
+		</svg>
+		<span class="nav-label" aria-hidden="true">목록</span>
 	</a>
+	<span class="separator" aria-hidden="true"></span>
 	{
 		next ? (
-			<a href={withBase(next.href)} title={`다음 글: ${next.title}`}>
-				다음 글<span aria-hidden="true"> →</span>
+			<a
+				class="nav-action"
+				href={withBase(next.href)}
+				aria-label={`다음 글: ${next.title}`}
+				title={`다음 글: ${next.title}`}
+			>
+				<span class="nav-label" aria-hidden="true">다음 글</span>
+				<svg aria-hidden="true" viewBox="0 0 24 24">
+					<path d="m9 18 6-6-6-6" />
+				</svg>
 			</a>
 		) : (
-			<span class="disabled" aria-disabled="true">
-				다음 글<span aria-hidden="true"> →</span>
+			<span class="nav-action disabled" aria-disabled="true">
+				<span class="nav-label" aria-hidden="true">다음 글</span>
+				<svg aria-hidden="true" viewBox="0 0 24 24">
+					<path d="m9 18 6-6-6-6" />
+				</svg>
+				<span class="sr-only">다음 글이 없습니다.</span>
 			</span>
 		)
 	}
@@ -46,82 +76,166 @@ const { previous, next } = Astro.props;
 	.post-floating-nav {
 		position: fixed;
 		z-index: 15;
-		bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+		bottom: calc(28px + env(safe-area-inset-bottom, 0px));
 		left: 50%;
 		display: flex;
 		width: max-content;
-		max-width: calc(100vw - 24px);
-		align-items: stretch;
-		padding: 5px;
+		max-width: calc(100vw - 40px);
+		align-items: center;
+		gap: 3px;
+		padding: 3px;
 		transform: translateX(-50%);
-		border: 1px solid var(--color-border);
+		border: 1px solid rgb(112 109 118 / 16%);
 		border-radius: 999px;
-		background: color-mix(in srgb, var(--color-surface) 92%, transparent);
-		box-shadow: 0 8px 26px color-mix(in srgb, var(--color-primary-text) 12%, transparent);
-		backdrop-filter: blur(16px);
-		-webkit-backdrop-filter: blur(16px);
+		background: rgba(255, 255, 255, 0.12);
+		box-shadow: 0 2px 6px rgb(37 35 42 / 6%);
+		-webkit-backdrop-filter: blur(2px) saturate(135%);
+		backdrop-filter: blur(2px) saturate(135%);
 	}
 
-	.post-floating-nav a,
-	.post-floating-nav a:visited,
-	.post-floating-nav .disabled {
+	.post-floating-nav::after {
+		position: absolute;
+		border-radius: inherit;
+		content: '';
+		pointer-events: none;
+	}
+
+	.post-floating-nav::after {
+		z-index: 0;
+		top: 1px;
+		right: 20%;
+		left: 20%;
+		height: 1px;
+		background: linear-gradient(
+			90deg,
+			transparent,
+			rgb(255 255 255 / 62%) 22%,
+			rgb(255 255 255 / 36%) 78%,
+			transparent
+		);
+		opacity: 0.7;
+	}
+
+	.nav-action,
+	.nav-action:visited {
+		position: relative;
+		z-index: 1;
 		display: inline-flex;
-		min-width: 48px;
-		min-height: 48px;
+		min-width: 44px;
+		min-height: 40px;
 		align-items: center;
 		justify-content: center;
-		padding: 0.65rem 1rem;
-		color: var(--color-secondary-text);
-		font-size: 0.82rem;
-		font-weight: 550;
+		gap: 0.65rem;
+		padding: 0 0.68rem;
+		border-radius: 999px;
+		color: var(--color-primary-text);
+		font-size: 0.78rem;
+		font-weight: 560;
 		line-height: 1.2;
 		text-decoration: none;
 		white-space: nowrap;
+		transition:
+			background-color 150ms ease,
+			color 150ms ease,
+			transform 150ms ease;
 	}
 
-	.post-floating-nav a + a,
-	.post-floating-nav a + .disabled,
-	.post-floating-nav .disabled + a,
-	.post-floating-nav .disabled + .disabled {
-		border-left: 1px solid var(--color-border);
+	.nav-action svg {
+		width: 18px;
+		height: 18px;
+		flex: none;
+		fill: none;
+		stroke: currentColor;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		stroke-width: 1.7;
 	}
 
-	.post-floating-nav a:hover,
-	.post-floating-nav a:visited:hover {
+	.nav-action:hover,
+	.nav-action:visited:hover {
+		background: rgb(255 255 255 / 54%);
 		color: var(--color-accent-hover);
 	}
 
-	.post-floating-nav a:focus-visible {
-		z-index: 1;
-		border-radius: 999px;
+	.nav-action:active {
+		background: rgb(255 255 255 / 76%);
+		transform: scale(0.96);
+	}
+
+	.nav-action:focus-visible {
 		outline: 2px solid var(--color-accent);
-		outline-offset: 1px;
+		outline-offset: 2px;
 	}
 
-	.post-floating-nav .disabled {
+	.nav-action.disabled {
 		color: var(--color-secondary-text);
-		opacity: 0.55;
+		opacity: 0.52;
 	}
 
-	@media (max-width: 480px) {
+	.separator {
+		position: relative;
+		z-index: 1;
+		width: 1px;
+		height: 20px;
+		flex: none;
+		background: rgb(112 109 118 / 20%);
+		box-shadow: 1px 0 rgb(255 255 255 / 58%);
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		clip-path: inset(50%);
+	}
+
+	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
 		.post-floating-nav {
-			width: calc(100vw - 24px);
-			justify-content: space-between;
-		}
-
-		.post-floating-nav a,
-		.post-floating-nav .disabled {
-			flex: 1 1 0;
-			padding-inline: 0.4rem;
-			font-size: 0.76rem;
+			background: rgba(255, 255, 255, 0.12);
 		}
 	}
 
-	@media (max-width: 350px) {
-		.post-floating-nav a,
-		.post-floating-nav .disabled {
-			padding-inline: 0.25rem;
-			font-size: 0.7rem;
+	@media (max-width: 767px) {
+		.post-floating-nav {
+			bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+			width: 160px;
+			padding: 3px;
+			justify-content: space-between;
+			gap: 0;
+		}
+
+		.nav-action,
+		.nav-action:visited {
+			width: 48px;
+			min-width: 44px;
+			height: 46px;
+			min-height: 44px;
+			flex: 0 0 48px;
+			gap: 0;
+			padding: 0;
+		}
+
+		.nav-action svg {
+			width: 19px;
+			height: 19px;
+		}
+
+		.nav-label {
+			display: none;
+		}
+
+		.separator {
+			height: 22px;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.nav-action,
+		.nav-action:visited {
+			transition: none;
 		}
 	}
 </style>

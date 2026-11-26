@@ -20,6 +20,7 @@ interface Props {
 	title?: string;
 	description?: string;
 	category?: CategoryName;
+	tags?: string[];
 	dateLabel?: string;
 	dateIso?: string;
 	headings?: Heading[];
@@ -31,6 +32,7 @@ const {
 	title,
 	description,
 	category,
+	tags = [],
 	dateLabel,
 	dateIso,
 	headings = [],
@@ -38,6 +40,8 @@ const {
 	next,
 } = Astro.props;
 const isPost = title !== undefined;
+const hasTableOfContents = !isPost || headings.some((heading) => heading.depth > 1);
+const tagCategoryPath = category ? withBase(`/category/${categorySlugs[category]}`) : '';
 
 const requestExample = `type User = {
   id: string;
@@ -182,6 +186,20 @@ const retryExample = `async function withRetry<T>(
 							<div class="article-meta">
 								<time datetime={dateIso}>{dateLabel}</time>
 							</div>
+							{tags.length > 0 && (
+								<ul class="post-tags" aria-label="태그">
+									{tags.map((tag) => (
+										<li>
+											<a
+												href={`${tagCategoryPath}?tag=${encodeURIComponent(tag)}`}
+												aria-label={`#${tag} 태그로 필터`}
+											>
+												#{tag}
+											</a>
+										</li>
+									))}
+								</ul>
+							)}
 						</header>
 					) : (
 						<header class="article-header">
@@ -387,37 +405,39 @@ const retryExample = `async function withRetry<T>(
 			</article>
 		</main>
 
-		<aside class="toc-sidebar" aria-label="이 페이지 목차">
-			<nav class="toc-menu" aria-label="목차">
-				<p class="toc-title">이 페이지에서</p>
-				{
-					isPost ? (
-						headings
-							.filter((heading) => heading.depth > 1)
-							.map((heading) => (
-								<a
-									class:list={{ 'toc-subitem': heading.depth > 2 }}
-									href={`#${heading.slug}`}
-								>
-									{heading.text}
-								</a>
-							))
-					) : (
-						<>
-							<a href="#overview">이 글에서 다루는 내용</a>
-							<a href="#execution-model">실행 모델 이해하기</a>
-							<a class="toc-subitem" href="#event-loop">이벤트 루프와 완료 순서</a>
-							<a href="#async-boundaries">안전한 비동기 경계 만들기</a>
-							<a class="toc-subitem" href="#validate-response">응답 검증</a>
-							<a class="toc-subitem" href="#retry-policy">재시도 정책</a>
-							<a href="#testing">실패 경로 테스트</a>
-							<a class="toc-subitem" href="#deterministic-tests">결정적 테스트</a>
-							<a href="#operations">운영 환경에서 확인할 것</a>
-						</>
-					)
-				}
-			</nav>
-		</aside>
+		{
+			hasTableOfContents && (
+				<aside class="toc-sidebar" aria-label="이 페이지 목차">
+					<nav class="toc-menu" aria-label="목차">
+						<p class="toc-title">이 페이지에서</p>
+						{isPost ? (
+							headings
+								.filter((heading) => heading.depth > 1)
+								.map((heading) => (
+									<a
+										class:list={{ 'toc-subitem': heading.depth > 2 }}
+										href={`#${heading.slug}`}
+									>
+										{heading.text}
+									</a>
+								))
+						) : (
+							<>
+								<a href="#overview">이 글에서 다루는 내용</a>
+								<a href="#execution-model">실행 모델 이해하기</a>
+								<a class="toc-subitem" href="#event-loop">이벤트 루프와 완료 순서</a>
+								<a href="#async-boundaries">안전한 비동기 경계 만들기</a>
+								<a class="toc-subitem" href="#validate-response">응답 검증</a>
+								<a class="toc-subitem" href="#retry-policy">재시도 정책</a>
+								<a href="#testing">실패 경로 테스트</a>
+								<a class="toc-subitem" href="#deterministic-tests">결정적 테스트</a>
+								<a href="#operations">운영 환경에서 확인할 것</a>
+							</>
+						)}
+					</nav>
+				</aside>
+			)
+		}
 	</div>
 
 	<script>
@@ -691,6 +711,40 @@ const retryExample = `async function withRetry<T>(
 		gap: 0.55rem;
 		color: var(--color-secondary-text);
 		font-size: 0.78rem;
+	}
+
+	.post-tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		margin: 1rem 0 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.post-tags a,
+	.post-tags a:visited {
+		display: inline-flex;
+		min-height: 28px;
+		align-items: center;
+		padding: 0.25rem 0.6rem;
+		border: 1px solid var(--color-border);
+		border-radius: 999px;
+		background: var(--color-surface);
+		color: var(--color-secondary-text);
+		font-size: 0.76rem;
+		line-height: 1.2;
+		text-decoration: none;
+	}
+
+	.post-tags a:hover {
+		border-color: var(--color-accent);
+		color: var(--color-accent-hover);
+	}
+
+	.post-tags a:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 2px;
 	}
 
 	.author-avatar {
@@ -1036,20 +1090,15 @@ const retryExample = `async function withRetry<T>(
 		color: var(--color-accent-hover);
 	}
 
-	@media (max-width: 1180px) {
+	@media (min-width: 1024px) and (max-width: 1263px) {
 		.reading-layout {
-			grid-template-columns: 180px minmax(0, 740px);
-			grid-template-areas: 'topics article';
+			grid-template-columns: 160px minmax(0, 1fr) 160px;
 			justify-content: center;
-			gap: 36px;
-		}
-
-		.toc-sidebar {
-			display: none;
+			gap: 24px;
 		}
 	}
 
-	@media (max-width: 820px) {
+	@media (max-width: 1023px) {
 		.reading-layout {
 			width: min(100% - 40px, 740px);
 			grid-template-columns: minmax(0, 1fr);

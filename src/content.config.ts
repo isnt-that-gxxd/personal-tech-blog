@@ -1,6 +1,7 @@
 import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { categoryNames } from './lib/categories';
+import { normalizeTags } from './lib/tags';
 
 const posts = defineCollection({
 	loader: glob({ base: './src/content/posts', pattern: '**/*.md' }),
@@ -13,6 +14,7 @@ const posts = defineCollection({
 			draft: z.boolean().default(false),
 			thumbnail: image().optional(),
 			thumbnailAlt: z.string().optional(),
+			tags: z.array(z.string()).optional().transform(normalizeTags),
 		}),
 });
 

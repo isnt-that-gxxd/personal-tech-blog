@@ -3,6 +3,8 @@ import DocumentationLayout from '../../layouts/DocumentationLayout.astro';
 import PostList from '../../components/PostList.astro';
 import { categoryNames, categorySlugs } from '../../lib/categories';
 import { getPublishedPosts, sortPostsByDate } from '../../lib/posts';
+import { normalizeTagKey } from '../../lib/tags';
+import { withBase } from '../../lib/urls';
 
 export async function getStaticPaths() {
 	const publishedPosts = await getPublishedPosts();
@@ -20,6 +22,10 @@ export async function getStaticPaths() {
 
 const { category, posts } = Astro.props;
 const description = `${category} 카테고리의 공개 게시글 ${posts.length}개를 확인하세요.`;
+const categoryUrl = withBase(`/category/${categorySlugs[category]}`);
+const tags = [...new Set(posts.flatMap((post) => post.data.tags))].sort((a, b) =>
+	a.localeCompare(b, 'ko'),
+);
 ---
 
 <DocumentationLayout
@@ -27,29 +33,176 @@ const description = `${category} 카테고리의 공개 게시글 ${posts.length
 	description={description}
 	activeCategory={category}
 >
-	<main id="main-content" class="category-page">
+	<main
+		id="main-content"
+		class:list={['category-page', { 'has-tags': tags.length > 0 }]}
+		data-category-filter
+	>
 		<header class="category-header">
 			<p class="eyebrow">카테고리</p>
 			<h1>{category}</h1>
 			<p class="category-description">{posts.length}개 게시글</p>
 		</header>
-		<PostList
-			posts={posts}
-			emptyMessage={`${category} 카테고리에 게시된 글이 없습니다.`}
-		/>
+		{
+			tags.length > 0 && (
+				<aside class="tag-sidebar">
+					<h2>Tags</h2>
+					<nav class="tag-links" aria-label="태그 필터">
+						<a href={categoryUrl} data-tag-filter="">전체</a>
+						{tags.map((tag) => (
+							<a
+								href={`${categoryUrl}?tag=${encodeURIComponent(tag)}`}
+								data-tag-filter={tag}
+							>
+								# {tag}
+							</a>
+						))}
+					</nav>
+				</aside>
+			)
+		}
+		<div class="category-results">
+			<p class="filter-status" data-filter-status role="status" aria-live="polite" hidden />
+			<PostList
+				posts={posts}
+				emptyMessage={`${category} 카테고리에 게시된 글이 없습니다.`}
+			/>
+		</div>
 	</main>
 </DocumentationLayout>
 
+<script>
+	import { normalizeTagKey } from '../../lib/tags';
+
+	const categoryPage = document.querySelector<HTMLElement>('[data-category-filter]');
+	const tagLinks = Array.from(
+		categoryPage?.querySelectorAll<HTMLAnchorElement>('[data-tag-filter]') ?? [],
+	);
+	const status = categoryPage?.querySelector<HTMLElement>('[data-filter-status]');
+
+	if (categoryPage && tagLinks.length > 0 && status) {
+		const requestedTag = new URLSearchParams(window.location.search).get('tag') ?? '';
+		const requestedKey = normalizeTagKey(requestedTag);
+		const posts = Array.from(categoryPage.querySelectorAll<HTMLElement>('[data-post-tags]'));
+		const emptyState = categoryPage.querySelector<HTMLElement>('[data-filter-empty]');
+		let visibleCount = 0;
+
+		for (const post of posts) {
+			const tags = JSON.parse(post.dataset.postTags ?? '[]') as string[];
+			const visible = !requestedKey || tags.includes(requestedKey);
+			post.hidden = !visible;
+			if (visible) visibleCount += 1;
+		}
+
+		const activeLink = tagLinks.find(
+			(link) => normalizeTagKey(link.dataset.tagFilter ?? '') === requestedKey,
+		);
+
+		for (const link of tagLinks) {
+			if (link === activeLink) {
+				link.classList.add('active');
+				link.setAttribute('aria-current', 'page');
+			} else {
+				link.classList.remove('active');
+				link.removeAttribute('aria-current');
+			}
+		}
+
+		const displayTag = activeLink?.dataset.tagFilter ?? requestedTag.trim();
+		status.textContent = requestedKey
+			? `#${displayTag} 태그가 포함된 게시글 ${visibleCount}개`
+			: `전체 ${visibleCount}개 게시글`;
+		status.hidden = false;
+		if (emptyState) emptyState.hidden = visibleCount > 0 || !requestedKey;
+	}
+</script>
+
 <style>
 	.category-page {
-		width: min(100% - 48px, 820px);
+		display: grid;
+		width: min(100% - 48px, 1180px);
+		grid-template-columns: 170px minmax(0, 820px);
+		grid-template-areas:
+			'tags heading'
+			'tags results';
+		justify-content: center;
+		column-gap: 40px;
 		margin: 0 auto;
 		padding: 58px 0 100px;
 	}
 
+	.category-page:not(.has-tags) {
+		grid-template-columns: minmax(0, 820px);
+		grid-template-areas:
+			'heading'
+			'results';
+	}
+
 	.category-header {
+		grid-area: heading;
+		min-width: 0;
 		padding-bottom: 2rem;
 		border-bottom: 1px solid var(--color-border);
+	}
+
+	.tag-sidebar {
+		grid-area: tags;
+		align-self: start;
+		min-width: 0;
+		padding-top: 0.3rem;
+	}
+
+	.tag-sidebar h2 {
+		margin: 0 0 0.75rem;
+		color: var(--color-secondary-text);
+		font-size: 0.72rem;
+		font-weight: 650;
+		letter-spacing: 0.075em;
+		text-transform: uppercase;
+	}
+
+	.tag-links {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.tag-links a,
+	.tag-links a:visited {
+		padding: 0.5rem 0.65rem;
+		border-radius: 0.4rem;
+		color: var(--color-secondary-text);
+		font-size: 0.86rem;
+		line-height: 1.4;
+		text-decoration: none;
+	}
+
+	.tag-links a:hover {
+		background: var(--color-surface);
+		color: var(--color-accent-hover);
+	}
+
+	.tag-links a.active,
+	.tag-links a.active:visited {
+		background: var(--color-subtle-surface);
+		color: var(--color-primary-text);
+		font-weight: 600;
+	}
+
+	.tag-links a:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 2px;
+	}
+
+	.category-results {
+		grid-area: results;
+		min-width: 0;
+	}
+
+	.filter-status {
+		margin: 0.9rem 0 0;
+		color: var(--color-secondary-text);
+		font-size: 0.82rem;
 	}
 
 	.eyebrow {
@@ -75,10 +228,41 @@ const description = `${category} 카테고리의 공개 게시글 ${posts.length
 		line-height: 1.7;
 	}
 
-	@media (max-width: 520px) {
+	@media (max-width: 767px) {
 		.category-page {
+			display: flex;
 			width: calc(100% - 36px);
+			flex-direction: column;
 			padding-top: 40px;
+		}
+
+		.tag-sidebar {
+			overflow: hidden;
+			margin-top: 1.15rem;
+			padding-top: 0;
+		}
+
+		.tag-sidebar h2 {
+			margin-bottom: 0.5rem;
+		}
+
+		.tag-links {
+			flex-direction: row;
+			gap: 0.4rem;
+			overflow-x: auto;
+			overscroll-behavior-x: contain;
+			padding: 0.1rem 0.1rem 0.45rem;
+			scrollbar-width: thin;
+		}
+
+		.tag-links a,
+		.tag-links a:visited {
+			flex: none;
+			white-space: nowrap;
+		}
+
+		.category-results {
+			margin-top: 0;
 		}
 	}
 </style>

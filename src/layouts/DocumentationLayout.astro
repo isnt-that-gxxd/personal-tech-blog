@@ -29,6 +29,14 @@ const hasFloatingNavigation = /^\/posts\/[^/]+\/?$/.test(pathname);
 		<meta name="application-name" content="통 속의 뇌" />
 		<meta property="og:site_name" content="통 속의 뇌" />
 		<meta name="generator" content={Astro.generator} />
+		<link
+			rel="preload"
+			href={withBase('/fonts/PretendardVariable.woff2')}
+			as="font"
+			type="font/woff2"
+			crossorigin
+		/>
+		<link rel="stylesheet" href={withBase('/fonts/pretendard.css')} />
 		<title>{title}</title>
 	</head>
 	<body>
@@ -60,12 +68,227 @@ const hasFloatingNavigation = /^\/posts\/[^/]+\/?$/.test(pathname);
 						})
 					}
 				</nav>
+				<button
+					class="menu-toggle"
+					type="button"
+					aria-label="메뉴 열기"
+					aria-expanded="false"
+					aria-controls="mobile-navigation"
+					data-menu-toggle
+				>
+					<svg aria-hidden="true" viewBox="0 0 24 24">
+						<path d="M4 7h16M4 12h16M4 17h16" />
+					</svg>
+				</button>
 			</div>
 		</header>
+		<div class="drawer-layer" data-drawer-layer hidden aria-hidden="true">
+			<div class="drawer-backdrop" data-drawer-backdrop></div>
+			<aside
+				id="mobile-navigation"
+				class="mobile-drawer"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="mobile-navigation-title"
+				aria-hidden="true"
+				tabindex="-1"
+			>
+				<div class="drawer-header">
+					<span id="mobile-navigation-title">메뉴</span>
+					<button class="drawer-close" type="button" aria-label="메뉴 닫기" data-drawer-close>
+						<svg aria-hidden="true" viewBox="0 0 24 24">
+							<path d="m6 6 12 12M18 6 6 18" />
+						</svg>
+					</button>
+				</div>
+				<nav class="drawer-nav" aria-label="모바일 주요 메뉴">
+					<a
+						class:current={isHome}
+						href={withBase('/')}
+						aria-current={isHome ? 'page' : undefined}
+					>Home</a>
+					{
+						categoryNames.map((category) => {
+							const isCurrent = activeCategory === category;
+							return (
+								<a
+									class:current={isCurrent}
+									href={withBase(`/category/${categorySlugs[category]}`)}
+									aria-current={isCurrent ? 'page' : undefined}
+								>
+									{category}
+								</a>
+							);
+						})
+					}
+				</nav>
+			</aside>
+		</div>
 		<div class="site-content">
 			<slot />
 		</div>
 		<Footer hasFloatingNavigation={hasFloatingNavigation} />
+		<script>
+			type BackgroundState = {
+				element: HTMLElement;
+				inert: boolean;
+				ariaHidden: string | null;
+			};
+
+			const menuToggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+			const drawerLayer = document.querySelector<HTMLDivElement>('[data-drawer-layer]');
+			const drawer = document.querySelector<HTMLElement>('.mobile-drawer');
+			const drawerClose = document.querySelector<HTMLButtonElement>('[data-drawer-close]');
+			const drawerBackdrop = document.querySelector<HTMLDivElement>('[data-drawer-backdrop]');
+
+			if (!menuToggle || !drawerLayer || !drawer || !drawerClose || !drawerBackdrop) {
+				throw new Error('Mobile navigation elements are missing.');
+			}
+
+			const focusableSelector = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+			let savedScrollY = 0;
+			let closeTimer: number | undefined;
+			let bodyStyleSnapshot: {
+				position: string;
+				top: string;
+				left: string;
+				width: string;
+				overflow: string;
+			} | undefined;
+			let backgroundStates: BackgroundState[] = [];
+
+			function lockPage() {
+				const body = document.body;
+				savedScrollY = window.scrollY;
+				bodyStyleSnapshot = {
+					position: body.style.position,
+					top: body.style.top,
+					left: body.style.left,
+					width: body.style.width,
+					overflow: body.style.overflow,
+				};
+				body.style.position = 'fixed';
+				body.style.top = `-${savedScrollY}px`;
+				body.style.left = '0';
+				body.style.width = '100%';
+				body.style.overflow = 'hidden';
+
+				backgroundStates = Array.from(body.children)
+					.filter(
+						(element): element is HTMLElement =>
+							element instanceof HTMLElement && element !== drawerLayer,
+					)
+					.map((element) => ({
+						element,
+						inert: element.inert,
+						ariaHidden: element.getAttribute('aria-hidden'),
+					}));
+
+				for (const state of backgroundStates) {
+					state.element.inert = true;
+					state.element.setAttribute('aria-hidden', 'true');
+				}
+			}
+
+			function restorePage() {
+				if (bodyStyleSnapshot) {
+					const body = document.body;
+					body.style.position = bodyStyleSnapshot.position;
+					body.style.top = bodyStyleSnapshot.top;
+					body.style.left = bodyStyleSnapshot.left;
+					body.style.width = bodyStyleSnapshot.width;
+					body.style.overflow = bodyStyleSnapshot.overflow;
+					bodyStyleSnapshot = undefined;
+				}
+
+				for (const state of backgroundStates) {
+					state.element.inert = state.inert;
+					if (state.ariaHidden === null) {
+						state.element.removeAttribute('aria-hidden');
+					} else {
+						state.element.setAttribute('aria-hidden', state.ariaHidden);
+					}
+				}
+				backgroundStates = [];
+
+				const previousScrollBehavior = document.documentElement.style.scrollBehavior;
+				document.documentElement.style.scrollBehavior = 'auto';
+				window.scrollTo(0, savedScrollY);
+				document.documentElement.style.scrollBehavior = previousScrollBehavior;
+			}
+
+			function finishClose() {
+				drawerLayer.hidden = true;
+				drawerLayer.setAttribute('aria-hidden', 'true');
+				drawer.setAttribute('aria-hidden', 'true');
+				menuToggle.setAttribute('aria-expanded', 'false');
+				closeTimer = undefined;
+				restorePage();
+				menuToggle.focus({ preventScroll: true });
+			}
+
+			function closeDrawer() {
+				if (drawerLayer.hidden || closeTimer !== undefined) return;
+
+				drawerLayer.classList.remove('is-open');
+				const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+				closeTimer = window.setTimeout(finishClose, reducedMotion ? 0 : 240);
+			}
+
+			function openDrawer() {
+				if (!drawerLayer.hidden) return;
+
+				lockPage();
+				drawerLayer.hidden = false;
+				drawerLayer.setAttribute('aria-hidden', 'false');
+				drawer.setAttribute('aria-hidden', 'false');
+				menuToggle.setAttribute('aria-expanded', 'true');
+				drawer.getBoundingClientRect();
+
+				window.requestAnimationFrame(() => {
+					drawerLayer.classList.add('is-open');
+					drawerClose.focus({ preventScroll: true });
+				});
+			}
+
+			function trapFocus(event: KeyboardEvent) {
+				if (drawerLayer.hidden) return;
+
+				if (event.key === 'Escape') {
+					event.preventDefault();
+					closeDrawer();
+					return;
+				}
+
+				if (event.key !== 'Tab') return;
+
+				const focusable = Array.from(drawer.querySelectorAll<HTMLElement>(focusableSelector));
+				const first = focusable[0];
+				const last = focusable[focusable.length - 1];
+
+				if (!first || !last) {
+					event.preventDefault();
+					drawer.focus();
+					return;
+				}
+
+				if (!drawer.contains(document.activeElement)) {
+					event.preventDefault();
+					first.focus();
+				} else if (event.shiftKey && document.activeElement === first) {
+					event.preventDefault();
+					last.focus();
+				} else if (!event.shiftKey && document.activeElement === last) {
+					event.preventDefault();
+					first.focus();
+				}
+			}
+
+			menuToggle.addEventListener('click', openDrawer);
+			drawerClose.addEventListener('click', closeDrawer);
+			drawerBackdrop.addEventListener('click', closeDrawer);
+			document.addEventListener('keydown', trapFocus, true);
+		</script>
 	</body>
 </html>
 
@@ -96,12 +319,12 @@ const hasFloatingNavigation = /^\/posts\/[^/]+\/?$/.test(pathname);
 		min-height: 100dvh;
 		flex-direction: column;
 		margin: 0;
-		min-width: 320px;
+		min-width: min(320px, 100%);
 		background: #fff;
 		color: var(--color-primary-text);
 		font-family:
-			Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR',
-			sans-serif;
+			Pretendard, Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo',
+			'Noto Sans KR', sans-serif;
 		-webkit-font-smoothing: antialiased;
 	}
 
@@ -138,8 +361,9 @@ const hasFloatingNavigation = /^\/posts\/[^/]+\/?$/.test(pathname);
 	}
 
 	.header-inner {
-		display: flex;
+		display: grid;
 		width: min(100% - 64px, 1480px);
+		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
 		height: 100%;
 		align-items: center;
 		margin: 0 auto;
@@ -147,6 +371,8 @@ const hasFloatingNavigation = /^\/posts\/[^/]+\/?$/.test(pathname);
 
 	.brand {
 		display: inline-flex;
+		grid-column: 1;
+		justify-self: start;
 		align-items: center;
 		gap: 0.65rem;
 		color: var(--color-primary-text);
@@ -171,10 +397,11 @@ const hasFloatingNavigation = /^\/posts\/[^/]+\/?$/.test(pathname);
 
 	.top-nav {
 		display: flex;
+		grid-column: 2;
 		height: 100%;
 		align-items: center;
 		gap: 1.7rem;
-		margin-left: 3rem;
+		justify-self: center;
 	}
 
 	.top-nav a,
@@ -207,14 +434,163 @@ const hasFloatingNavigation = /^\/posts\/[^/]+\/?$/.test(pathname);
 		outline-offset: -3px;
 	}
 
-	@media (max-width: 640px) {
-		.site-header {
-			height: 58px;
-		}
+	.menu-toggle {
+		display: none;
+	}
 
+	.drawer-layer {
+		position: fixed;
+		z-index: 30;
+		inset: 0;
+	}
+
+	.drawer-layer[hidden] {
+		display: none;
+	}
+
+	.drawer-backdrop {
+		position: absolute;
+		z-index: 0;
+		inset: 0;
+		background: rgb(37 35 42 / 32%);
+		opacity: 0;
+		transition: opacity 220ms ease;
+	}
+
+	.mobile-drawer {
+		position: absolute;
+		z-index: 1;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		display: flex;
+		width: min(85vw, 320px);
+		max-width: 320px;
+		flex-direction: column;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		padding: calc(16px + env(safe-area-inset-top, 0px)) 20px
+			calc(20px + env(safe-area-inset-bottom, 0px));
+		transform: translateX(100%);
+		background: #fff;
+		box-shadow: -16px 0 40px rgb(37 35 42 / 12%);
+		transition: transform 220ms ease;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.drawer-layer.is-open .drawer-backdrop {
+		opacity: 1;
+	}
+
+	.drawer-layer.is-open .mobile-drawer {
+		transform: translateX(0);
+	}
+
+	.drawer-header {
+		display: flex;
+		min-height: 48px;
+		align-items: center;
+		justify-content: space-between;
+		color: var(--color-primary-text);
+		font-size: 1rem;
+		font-weight: 650;
+	}
+
+	.drawer-close,
+	.menu-toggle {
+		display: inline-flex;
+		width: 44px;
+		height: 44px;
+		flex: none;
+		align-items: center;
+		justify-content: center;
+		padding: 0;
+		color: var(--color-primary-text);
+		cursor: pointer;
+	}
+
+	.drawer-close {
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		transition: color 160ms ease;
+	}
+
+	.drawer-close:hover {
+		color: var(--color-secondary-text);
+	}
+
+	.drawer-close:active {
+		color: var(--color-accent);
+	}
+
+	.menu-toggle {
+		border: 1px solid var(--color-border);
+		border-radius: 12px;
+		background: #fff;
+	}
+
+	.drawer-close svg,
+	.menu-toggle svg {
+		width: 21px;
+		height: 21px;
+		fill: none;
+		stroke: currentColor;
+		stroke-linecap: round;
+		stroke-width: 1.8;
+	}
+
+	.menu-toggle {
+		display: none;
+	}
+
+	.drawer-close:focus-visible,
+	.menu-toggle:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 2px;
+	}
+
+	.drawer-nav {
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+		margin-top: 20px;
+	}
+
+	.drawer-nav a,
+	.drawer-nav a:visited {
+		display: flex;
+		min-height: 60px;
+		align-items: center;
+		padding: 0 16px;
+		border-radius: 0;
+		color: var(--color-primary-text);
+		font-size: 17px;
+		font-weight: 500;
+		text-decoration: none;
+		transition: color 300ms ease-in-out;
+	}
+
+	.drawer-nav a:hover {
+		color: #707070;
+	}
+
+	.drawer-nav a[aria-current='page'] {
+		color: var(--color-accent);
+		font-weight: 600;
+	}
+
+	.drawer-nav a:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 2px;
+	}
+
+	@media (max-width: 900px) {
 		.header-inner {
+			display: flex;
 			width: calc(100% - 36px);
 			gap: 0.75rem;
+			justify-content: space-between;
 		}
 
 		.brand {
@@ -222,24 +598,31 @@ const hasFloatingNavigation = /^\/posts\/[^/]+\/?$/.test(pathname);
 		}
 
 		.top-nav {
-			min-width: 0;
-			flex: 1 1 0;
-			gap: 0.25rem;
-			margin-left: 0;
-			overflow-x: auto;
-			overscroll-behavior-x: contain;
+			display: none;
 		}
 
-		.top-nav a {
-			flex: none;
-			padding: 0 0.45rem;
-			font-size: 0.78rem;
+		.menu-toggle {
+			display: inline-flex;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.site-header {
+			height: 58px;
 		}
 	}
 
 	@media (max-width: 600px) {
 		:global(:root) {
 			--home-content-width: calc(100% - 36px);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.drawer-backdrop,
+		.mobile-drawer,
+		.drawer-nav a {
+			transition-duration: 0.01ms;
 		}
 	}
 </style>
