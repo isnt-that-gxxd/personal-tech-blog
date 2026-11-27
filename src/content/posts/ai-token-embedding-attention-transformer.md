@@ -1,5 +1,5 @@
 ---
-title: "AI는 사람의 문장을 어떻게 이해할까? 토큰부터 Transformer까지"
+title: "[AI 기초 | 1강] AI는 우리가 하는 말을 어떻게 이해할까?"
 description: "LLM이 텍스트를 처리하는 원리를 Token, Embedding, Attention, Self-Attention, Transformer 개념으로 알아보고, 의미 검색과 Context Window까지 정리합니다."
 date: 2026-11-27
 category: "learn-ai"

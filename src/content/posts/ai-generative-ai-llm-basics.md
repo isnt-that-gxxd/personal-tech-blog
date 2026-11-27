@@ -1,7 +1,7 @@
 ---
-title: "AI와 생성형 AI, LLM의 기초 개념"
+title: "[AI 기초 | 0강] AI로 AI 공부하기 | ChatGPT"
 description: "AI와 생성형 AI의 차이부터 LLM, 모델·학습·추론, 문장 생성 원리, AI 환각과 결과 검증까지 정리합니다."
-date: 2026-11-27
+date: 2026-11-26
 category: "learn-ai"
 tags:
   - "AI"
