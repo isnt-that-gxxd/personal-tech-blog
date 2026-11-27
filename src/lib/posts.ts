@@ -20,14 +20,14 @@ export function getFeaturedPosts(posts: readonly PostEntry[]): PostEntry[] {
 	);
 	const selectedIds = new Set<string>();
 
-	return featuredPostIds
-		.flatMap((id) => {
-			if (selectedIds.has(id)) return [];
-			selectedIds.add(id);
-			const post = publishedPostsById.get(id);
-			return post ? [post] : [];
-		})
-		.slice(0, 3);
+	const featuredPosts = featuredPostIds.flatMap((id) => {
+		if (selectedIds.has(id)) return [];
+		selectedIds.add(id);
+		const post = publishedPostsById.get(id);
+		return post ? [post] : [];
+	});
+
+	return sortPostsByDate(featuredPosts).slice(0, 3);
 }
 
 export function sortPostsByDate(
@@ -35,12 +35,11 @@ export function sortPostsByDate(
 	direction: 'newest' | 'oldest' = 'newest',
 ): PostEntry[] {
 	return [...posts].sort((a, b) => {
-		const dateDifference = a.data.date.getTime() - b.data.date.getTime();
-		if (dateDifference !== 0) {
-			return direction === 'newest' ? -dateDifference : dateDifference;
-		}
-
-		return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+		const aTime = a.data.publishedAt ? Date.parse(a.data.publishedAt) : a.data.date.getTime();
+		const bTime = b.data.publishedAt ? Date.parse(b.data.publishedAt) : b.data.date.getTime();
+		const idDifference = a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+		const newestFirst = bTime - aTime || idDifference;
+		return direction === 'newest' ? newestFirst : -newestFirst;
 	});
 }
 

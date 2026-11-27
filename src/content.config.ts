@@ -21,6 +21,7 @@ const posts = defineCollection({
 			title: z.string(),
 			description: z.string(),
 			date: z.coerce.date(),
+			publishedAt: z.iso.datetime({ offset: true }).optional(),
 			updatedDate: z.coerce.date().optional(),
 			category: categorySchema,
 			draft: z.boolean().default(false),
