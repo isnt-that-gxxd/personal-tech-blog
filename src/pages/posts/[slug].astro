@@ -16,6 +16,7 @@ export async function getStaticPaths() {
 const { post, previous, next } = Astro.props;
 const { Content, headings } = await render(post);
 const dateIso = post.data.date.toISOString().slice(0, 10);
+const dateModifiedIso = post.data.updatedDate?.toISOString().slice(0, 10);
 const dateLabel = formatPostDate(post.data.date);
 ---
 
@@ -25,6 +26,7 @@ const dateLabel = formatPostDate(post.data.date);
 	category={post.data.category}
 	tags={post.data.tags}
 	dateIso={dateIso}
+	dateModifiedIso={dateModifiedIso}
 	dateLabel={dateLabel}
 	headings={headings}
 	previous={

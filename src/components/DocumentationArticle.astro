@@ -23,6 +23,8 @@ interface Props {
 	tags?: string[];
 	dateLabel?: string;
 	dateIso?: string;
+	dateModifiedIso?: string;
+	noindex?: boolean;
 	headings?: Heading[];
 	previous?: PostLink;
 	next?: PostLink;
@@ -35,11 +37,23 @@ const {
 	tags = [],
 	dateLabel,
 	dateIso,
+	dateModifiedIso,
+	noindex: noindexProp,
 	headings = [],
 	previous,
 	next,
 } = Astro.props;
 const isPost = title !== undefined;
+const hasMarkdownH1 = headings.some((heading) => heading.depth === 1);
+const noindex = noindexProp ?? !isPost;
+const articleMetadata =
+	isPost && title && dateIso
+		? {
+				headline: title,
+				datePublished: dateIso,
+				dateModified: dateModifiedIso,
+			}
+		: undefined;
 const hasTableOfContents = !isPost || headings.some((heading) => heading.depth > 1);
 const tagCategoryPath = category ? withBase(`/category/${categorySlugs[category]}`) : '';
 
@@ -125,6 +139,8 @@ const retryExample = `async function withRetry<T>(
 			: '실패를 예측하고 복구할 수 있는 비동기 API 설계 방법을 살펴봅니다.'
 	}
 	activeCategory={isPost ? category : undefined}
+	noindex={noindex}
+	articleMetadata={articleMetadata}
 >
 	<div class:list={['reading-layout', { 'has-post-navigation': isPost }]}>
 		<aside class="topic-sidebar" aria-label="문서 주제 탐색">
@@ -183,6 +199,7 @@ const retryExample = `async function withRetry<T>(
 							<p class="eyebrow" id="article-category">
 								{category} <span aria-hidden="true">·</span> 기술 가이드
 							</p>
+							{!hasMarkdownH1 && <h1>{title}</h1>}
 							<div class="article-meta">
 								<time datetime={dateIso}>{dateLabel}</time>
 							</div>
@@ -771,6 +788,10 @@ const retryExample = `async function withRetry<T>(
 		overflow-wrap: break-word;
 	}
 
+	.reading-layout.has-post-navigation .article-body {
+		line-height: 1.5;
+	}
+
 	.article-body section {
 		margin-top: 2.6rem;
 	}
@@ -801,6 +822,10 @@ const retryExample = `async function withRetry<T>(
 
 	.article-body p {
 		margin: 0 0 1.15rem;
+	}
+
+	.reading-layout.has-post-navigation .article-body > p {
+		margin: 0 0 0.5em;
 	}
 
 	.article-body strong {
